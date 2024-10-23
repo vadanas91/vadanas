@@ -1,0 +1,135 @@
+import csv
+
+#Data Set: https://www.kaggle.com/datasets/asaniczka/amazon-kindle-books-dataset-2023-130k-books
+#Added an extra column: is checked out = random yes or no 
+
+#ask user: Welcome to Lib-Checkout System! How they would like to check out a book? 1. Title 2. Author 3. Genre
+    #If by title:
+        #ask user: ask book name they would like read?
+            #search in the csv.file for the book name
+            #let user know if the book is checked out: yes or no
+    #If by author:
+        #ask user: ask author name?
+            #search in the csv.file for the author name
+            #give the list of books by author
+            #have user type in the book name from the list
+            #let user know if the book is checked out: yes or no
+    #If by genre:
+        #ask user: ask genre?
+            #search in the csv.file for the genre
+            #give the list of books by 4.9/5 rating, list 10 books
+            #have user type in the book name from the list
+            #let user know if the book is checked out: yes or no
+
+#count of how many line in database
+count = 0 
+for line in open('Listofbooks.csv', 'r'):
+      count += 1
+print(f"Total {count} lines in this ListofBooks CSV file")
+
+#main search, since checkout way is only by title
+def search_title(csv_file, column_name, search_value):
+    with open(csv_file, 'r') as file:
+        reader = csv.DictReader(file)
+        found_book = False
+        for row in reader:
+            csv_title = row[column_name].upper()
+            if csv_title == search_value:
+                found_book = True
+                for category, response in row.items():
+                    if category == "isCheckedOut" and response == "No":
+                        User_input2 = input("The book is available for you to check out. Would you like to check out this book? ")
+                        User_input2 = User_input2.upper()
+                        if User_input2 == "YES":
+                            print(f"This book '{row['title']}' by '{row['author']}' is checked out to you! Please return in 1 month for others to check out.")
+                            update_csv_cell('Listofbooks.csv',row["title"],row["author"])
+                        elif User_input2 == "NO":
+                            print("Ok. Let's choose another book.") 
+                            Main_ques = int(input("How would you like to check out a book: 1.Title, 2.Author, 3.Genre. Please enter a number. "))
+                            lib_search(Main_ques)
+                    elif category == "isCheckedOut" and response == "Yes":
+                        print("Sorry, the book is checked out.")
+                        Main_ques = int(input("Let's choose another book. How would you like to check out a book: 1.Title, 2.Author, 3.Genre. Please enter a number. "))
+                        lib_search(Main_ques)
+        if found_book == False:
+            print("This title is not available in our database.")
+            
+
+def search_author(csv_file, column_name, search_value):
+    with open(csv_file, 'r') as file:
+        reader = csv.DictReader(file)
+        found_author = False
+        j = 1
+        for row in reader:
+            csv_author = row[column_name].upper()
+            if csv_author == search_value:
+                found_author = True
+                print(f'{j}. {row['title']}')
+                j = j+1
+                break
+    if found_author == True:
+        User_input2 = input("Enter the Title of the book you would like to read from the list above: ")
+        User_input2 = User_input2.upper()
+        search_title(csv_file,'title',User_input2)
+    else:
+        print("This Author is not available in our database.")
+    
+
+def search_genre(csv_file, column_name, search_value):
+    with open(csv_file, 'r') as file:
+        reader = csv.DictReader(file)
+        found_genre = False
+        i = 1
+        for row in reader:
+            csv_genre = row[column_name].upper()
+            if csv_genre == search_value and i<=10 and row['stars']>=str(4.0):
+                found_genre = True
+                print(f'{i}. {row['title']} by {row['author']}.')
+                i = i+1
+        if found_genre == True:
+            User_input2 = input("Enter the Title of the book you would like to read from the list above: ")
+            User_input2 = User_input2.upper()
+            search_title(csv_file,'title',User_input2)
+        else:
+            print("This Genre is not available in our database.")
+            lib_search(Main_ques)
+
+def update_csv_cell(csv_file, selected_title, selected_author):
+    with open(csv_file, 'r') as file:
+        reader = csv.DictReader(file)
+        data = list(reader)
+        for row in data:
+            if row["author"] == selected_author and row['title'] == selected_title:
+                print(f'The selected book is {row["title"], row["author"], row["isCheckedOut"]}')
+                row['isCheckedOut'] = "Yes"
+                print(f'The selected book is {row["title"], row["author"], row["isCheckedOut"]}')
+                break
+    with open(csv_file, 'w', newline='') as file:
+        writer = csv.DictWriter(file,fieldnames=reader.fieldnames)
+        writer.writeheader()
+        writer.writerows(data)
+
+def lib_search(Main_ques):
+    if Main_ques == 1:
+        Titleofbook = input("Enter the Title you would like to read: ")
+        Titleofbook = Titleofbook.upper()
+        csv_file = 'Listofbooks.csv' 
+        column_name = 'title'
+        search_title(csv_file, column_name, Titleofbook) 
+    elif Main_ques == 2:
+        Authorofbook = input("I can give you a list of books written by the Author of your choice. Enter the Author you would like to read: ")
+        Authorofbook = Authorofbook.upper()
+        csv_file = 'Listofbooks.csv' 
+        column_name = 'author'
+        search_author(csv_file, column_name, Authorofbook)
+    elif Main_ques == 3:
+        Genreofbook = input("I can give you a list of top 10 books. Enter the Genre you would like to read: ")
+        Genreofbook = Genreofbook.upper()
+        csv_file = 'Listofbooks.csv' 
+        column_name = 'category_name'
+        search_genre(csv_file, column_name, Genreofbook)
+    else:
+        print("Invalid entry")
+
+Main_ques = int(input("Welcome to LIB-Checkout System. How would you like to check out a book: 1.Title, 2.Author, 3.Genre. Please enter a number. "))
+lib_search(Main_ques)
